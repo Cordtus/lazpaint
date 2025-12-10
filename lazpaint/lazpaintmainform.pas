@@ -1218,6 +1218,12 @@ begin
     m.Apply;
     FLayout.Menu := m;
 
+    // Force Qt6 to rebuild main menu by detaching and reattaching
+    Self.Menu := nil;
+    Application.ProcessMessages;
+    Self.Menu := MainMenu1;
+    Application.ProcessMessages;
+
     SVGImageList1.Width := iconSize;
     SVGImageList1.Height := iconSize;
     SVGImageList1.PopulateImageList(SVGRasterImageList1, [iconSize]);

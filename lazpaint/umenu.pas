@@ -107,6 +107,25 @@ begin
   FInstance.ChangeIconSize(item.Tag);
 end;
 
+// Helper function to find action by name using direct iteration
+// This works around Qt6 ActionByName issues during early initialization
+function FindActionByNameDirect(AActionList: TActionList; const AName: string): TBasicAction;
+var
+  k: Integer;
+  actName: string;
+begin
+  Result := nil;
+  for k := 0 to AActionList.ActionCount - 1 do
+  begin
+    actName := AActionList.Actions[k].Name;
+    if SameText(actName, AName) then
+    begin
+      Result := AActionList.Actions[k];
+      Exit;
+    end;
+  end;
+end;
+
 procedure TMainFormMenu.AddMenus(AMenu: TMenuItem; AActionList: TActionList;
   AActionsCommaText: string; AIndex: integer);
 var actions: TStringList;
@@ -158,7 +177,7 @@ begin
       item.Caption := cLineCaption
     else
     begin
-      foundAction := AActionList.ActionByName(actions[i]);
+      foundAction := FindActionByNameDirect(AActionList, actions[i]);
       if foundAction <> nil then
         item.Action := foundAction
       else
@@ -202,13 +221,13 @@ begin
         if Assigned(item) and (actions[i] = 'EditShapeAlign') then
         begin
           item.Caption := rsAlignShape;
-          AddSubItem(AActionList.ActionByName('EditShapeAlignLeft'));
-          AddSubItem(AActionList.ActionByName('EditShapeCenterHorizontally'));
-          AddSubItem(AActionList.ActionByName('EditShapeAlignRight'));
+          AddSubItem(FindActionByNameDirect(AActionList, 'EditShapeAlignLeft'));
+          AddSubItem(FindActionByNameDirect(AActionList, 'EditShapeCenterHorizontally'));
+          AddSubItem(FindActionByNameDirect(AActionList, 'EditShapeAlignRight'));
           AddSubItem('-',nil,0);
-          AddSubItem(AActionList.ActionByName('EditShapeAlignTop'));
-          AddSubItem(AActionList.ActionByName('EditShapeCenterVertically'));
-          AddSubItem(AActionList.ActionByName('EditShapeAlignBottom'));
+          AddSubItem(FindActionByNameDirect(AActionList, 'EditShapeAlignTop'));
+          AddSubItem(FindActionByNameDirect(AActionList, 'EditShapeCenterVertically'));
+          AddSubItem(FindActionByNameDirect(AActionList, 'EditShapeAlignBottom'));
           AMenu.Add(item);
           item := nil;
         end;
@@ -332,7 +351,7 @@ procedure TMainFormMenu.ActionShortcut(AName: string; AShortcut: TUTF8Char);
 var foundAction: TBasicAction;
   ShortcutStr: string;
 begin
-  foundAction := FActionList.ActionByName(AName);
+  foundAction := FindActionByNameDirect(FActionList, AName);
   if foundAction <> nil then
   begin
     ShortcutStr := AShortcut;
@@ -489,7 +508,10 @@ begin
   AddMenus('MenuHelp',   'HelpIndex,-,HelpAbout');
   for i := 0 to high(FMainMenus) do
     if not FMainMenus[i].used then
-       FMainMenus[i].menu.Visible := false;
+       FMainMenus[i].menu.Visible := false
+    else
+       // Qt6: Force menu visibility to ensure it's displayed
+       FMainMenus[i].menu.Visible := true;
 
   ApplyShortcuts;
 
