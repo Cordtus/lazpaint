@@ -905,9 +905,9 @@ type
 
 implementation
 
-uses LCLIntf, BGRAUTF8, ugraph, math, umac, uclipboard, ucursors,
-   ufilters, ULoadImage, ULoading, UFileExtensions, UBrushType,
-   ugeometricbrush, UPreviewDialog, UQuestion, BGRALayerOriginal,
+uses LCLIntf, InterfaceBase, LCLPlatformDef, BGRAUTF8, ugraph, math, umac,
+   uclipboard, ucursors, ufilters, ULoadImage, ULoading, UFileExtensions,
+   UBrushType, ugeometricbrush, UPreviewDialog, UQuestion, BGRALayerOriginal,
    BGRATransform, LCVectorPolyShapes, URaw, UFileSystem,
    UTranslation, UPython, BCTypes;
 
@@ -1218,11 +1218,14 @@ begin
     m.Apply;
     FLayout.Menu := m;
 
-    // Force Qt6 to rebuild main menu by detaching and reattaching
-    Self.Menu := nil;
-    Application.ProcessMessages;
-    Self.Menu := MainMenu1;
-    Application.ProcessMessages;
+    // Force Qt5/Qt6 to rebuild main menu by detaching and reattaching
+    // This works around menu items randomly not displaying on Qt widgetsets
+    if WidgetSet.LCLPlatform in [lpQt5, lpQt6] then
+    begin
+      Self.Menu := nil;
+      Self.Menu := MainMenu1;
+      Application.ProcessMessages;
+    end;
 
     SVGImageList1.Width := iconSize;
     SVGImageList1.Height := iconSize;
