@@ -1177,7 +1177,7 @@ var
   m: TMainFormMenu;
   startFillControlWidth: LongInt;
   iconSize: Integer;
-  toolbarDPI, w, h: integer;
+  toolbarDPI, w, h, i: integer;
 begin
   if FLayout.Menu = nil then
   begin
@@ -1220,10 +1220,25 @@ begin
 
     // Force Qt5/Qt6 to rebuild main menu by detaching and reattaching
     // This works around menu items randomly not displaying on Qt widgetsets
+    // Qt6 has race conditions during early widget initialization that can
+    // cause menu items to not appear. Multiple ProcessMessages calls and
+    // explicit visibility toggling helps ensure the menu bar is fully built.
     if WidgetSet.LCLPlatform in [lpQt5, lpQt6] then
     begin
+      // First pass: detach menu and process
       Self.Menu := nil;
+      Application.ProcessMessages;
+      Application.ProcessMessages;
+      // Second pass: reattach and force visibility on all top-level menus
       Self.Menu := MainMenu1;
+      for i := 0 to MainMenu1.Items.Count - 1 do
+      begin
+        MainMenu1.Items[i].Visible := False;
+        MainMenu1.Items[i].Visible := True;
+      end;
+      Application.ProcessMessages;
+      // Force the form to update its menu bar
+      MainMenu1.HandleNeeded;
       Application.ProcessMessages;
     end;
 
